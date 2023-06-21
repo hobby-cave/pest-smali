@@ -1,6 +1,18 @@
-comment_text = @{ "#" ~ (!"\n" ~ ANY)* ~ "\n" }
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" | comment_text }
+// built in rules
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ silent_comment }
 
-root = {
+// helper rules
+silent_comment = @{ "#" ~ (!"\n" ~ ANY)* ~ "\n" }
+
+// smali content
+smali_file = {
     ".class"
+}
+
+// parser root
+root = {
+    SOI
+    ~ smali_file
+    ~ EOI
 }
