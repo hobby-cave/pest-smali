@@ -1,24 +1,64 @@
+use pest::{iterators::Pair, Parser};
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum CodeError {
+    #[error("parse entry")]
+    ParseEntry(#[source] Box<pest::error::Error<Rule>>),
+}
+
 #[derive(pest_derive::Parser)]
 #[grammar = "parser/code.pest"]
 pub struct Code;
+
+#[doc = "return 's_file' rule pair"]
+pub fn parse_smali_file(code: &str) -> Result<Pair<Rule>, CodeError> {
+    let mut entry =
+        Code::parse(Rule::entry, code).map_err(|e| CodeError::ParseEntry(Box::new(e)))?;
+    debug_assert_eq!(entry.len(), 2);
+    debug_assert_eq!(entry.next_back().map(|p| p.as_rule()), Some(Rule::EOI));
+
+    let entry = entry.next();
+    debug_assert_eq!(entry.as_ref().map(|p| p.as_rule()), Some(Rule::s_file));
+
+    Ok(entry.unwrap())
+}
 
 #[cfg(test)]
 mod test {
     use {
         super::*,
-        pest::{iterators::Pairs, Parser},
+        pest::iterators::Pairs,
+        std::fmt::{Display, Formatter},
     };
+
+    #[derive(Copy, Clone)]
+    struct Space(usize);
+
+    impl Display for Space {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            for _ in 0..self.0 {
+                write!(f, " ")?;
+            }
+            Ok(())
+        }
+    }
 
     #[test]
     fn parse() {
-        let root = Code::parse(Rule::root, include_str!("full_test.smali")).expect("parse");
-        dump_pair(root, "");
+        let mut root =
+            Code::parse(Rule::entry, include_str!("full_test.smali")).expect("parse smali file");
+        dump_pair(root.clone(), 0);
+
+        debug_assert_eq!(root.len(), 2);
+        debug_assert_eq!(root.next_back().map(|p| p.as_rule()), Some(Rule::EOI));
+        debug_assert_eq!(root.next().map(|p| p.as_rule()), Some(Rule::s_file));
     }
 
-    fn dump_pair<S: AsRef<str>>(pairs: Pairs<Rule>, prefix: S) {
+    fn dump_pair(pairs: Pairs<Rule>, prefix: usize) {
         for pair in pairs {
-            println!("{}pair {:?}", prefix.as_ref(), pair.as_rule());
-            dump_pair(pair.into_inner(), format!("  {}", prefix.as_ref()))
+            println!("{}pair {:?}", Space(prefix), pair.as_rule());
+            dump_pair(pair.into_inner(), prefix + 2);
         }
     }
 }
