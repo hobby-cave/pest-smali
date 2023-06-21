@@ -1,0 +1,6 @@
+comment_text = @{ "#" ~ (!"\n" ~ ANY)* ~ "\n" }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" | comment_text }
+
+root = {
+    ".class"
+}

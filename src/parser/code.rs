@@ -1,5 +1,3 @@
-use pest_derive::Parser;
-
-#[derive(Parser)]
+#[derive(pest_derive::Parser)]
 #[grammar = "parser/code.pest"]
 pub struct Code;
