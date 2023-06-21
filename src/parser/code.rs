@@ -11,7 +11,7 @@ mod test {
 
     #[test]
     fn parse() {
-        let root = Code::parse(Rule::root, " #with comment\n.class").expect("parse");
+        let root = Code::parse(Rule::root, include_str!("full_test.smali")).expect("parse");
         dump_pair(root, "");
     }
 
