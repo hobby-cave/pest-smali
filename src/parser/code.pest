@@ -1,18 +1,97 @@
 // built in rules
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+WHITESPACE = _{ " " | NEWLINE }
 COMMENT = _{ h_comment }
 
 // helper rules
-h_comment = @{ "#" ~ (!"\n" ~ ANY)* ~ "\n" }
+h_comment = @{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+h_id = @{ (ASCII_ALPHANUMERIC | "_" )+ }
+h_modifier = {
+    "public" | "private"
+    | "final"
+    | "static"
+}
+h_literal = @{
+    "\"" ~ (("\\" ~ ANY) | (!("\"" | "\\") ~ ANY))* ~ "\""
+}
+h_sig_primitive = {
+    "B" | "Z" | "C" | "S" | "I" | "J" | "F" | "D"
+}
+h_sig_class = @{
+    "L" ~ h_id ~ (("/" | "$") ~ h_id)* ~ ";"
+}
+h_sig_array = @{
+    "[" ~ h_sig
+}
+h_sig = @{
+    h_sig_primitive
+    | h_sig_class
+    | h_sig_array
+}
 
 // smali content
 s_file = {
-    ".class"
+    sh_class?
+    ~ sh_super?
+    ~ sh_source?
+}
+
+// smali header
+sh_class = {
+    ".class" ~ h_modifier* ~ h_sig_class
+}
+
+sh_super = {
+    ".super" ~ h_sig_class
+}
+
+sh_source = {
+    ".source" ~ h_literal
+}
+
+// smali instruction
+s_inst = {
+    (!".end" ~ ANY*) ~ NEWLINE
+}
+
+// smali method
+s_method = {
+    // method head
+    ".method" ~ h_modifier* ~ h_id ~ sm_sig
+    ~ (".locals" ~ sm_local_count)?
+    
+    // method annotation
+    
+    // method body
+    ~ sm_body
+    
+    // method end
+    ~ ".end" ~ "method"
+}
+
+sm_sig = ${
+    "(" ~ sm_sig_param ~ ")" ~ sm_sig_ret
+}
+
+sm_sig_param = {
+    h_sig*
+}
+
+sm_sig_ret = {
+    "V" | h_sig
+}
+
+sm_local_count = {
+    ASCII_DIGIT+
+}
+
+sm_body = {
+    s_inst*
 }
 
 // parser root
 entry = _{
     SOI
     ~ s_file
+    ~ s_method*
     ~ EOI
 }

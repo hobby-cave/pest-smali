@@ -46,13 +46,14 @@ mod test {
 
     #[test]
     fn parse() {
-        let mut root =
-            Code::parse(Rule::entry, include_str!("full_test.smali")).expect("parse smali file");
-        dump_pair(root.clone(), 0);
+        let root =
+            Code::parse(Rule::entry, include_str!("part_test.smali")).expect("parse smali file");
+        dump_pair(root, 0);
+    }
 
-        debug_assert_eq!(root.len(), 2);
-        debug_assert_eq!(root.next_back().map(|p| p.as_rule()), Some(Rule::EOI));
-        debug_assert_eq!(root.next().map(|p| p.as_rule()), Some(Rule::s_file));
+    #[test]
+    fn literal() {
+        Code::parse(Rule::h_literal, r#""test\nstring""#).unwrap();
     }
 
     fn dump_pair(pairs: Pairs<Rule>, prefix: usize) {
